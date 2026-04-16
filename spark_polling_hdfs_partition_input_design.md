@@ -385,7 +385,90 @@ statements:
 - 不需要先解决 Spark SQL 多路径 `path` 参数的兼容问题。
 - 与旧实现“每个文件夹完成后打 finished 标记”的语义一致。
 
-后续可以扩展批量模式，让一个运行实例一次处理多个分区，例如提供 `${tp.input.paths}`。但批量模式需要额外考虑部分成功、标记写入和失败重试，不建议第一阶段直接做复杂。
+如果本轮待处理分区较多，可以进一步引入“批量分区 + 运行时临时视图”的方案，作为减少任务实例数量的推荐方向。
+
+这个方案不建议在 HDFS 上把多个分区物理合并成一个新目录。物理合并会增加额外 IO、临时目录清理、失败半成品处理和并发命名问题。更合适的做法是：把多个输入分区组成一个 batch，由框架在 Spark 运行时读取多个路径，形成一个 `Dataset<Row>`，再注册成本次运行实例独有的临时视图。
+
+示例：本轮有 120 个待处理输入分区，配置 `partition-batch-size=50`，则每个 `sql.yaml` 会被展开为 3 个运行实例：
+
+```text
+run-1: partitions[0..49]
+run-2: partitions[50..99]
+run-3: partitions[100..119]
+```
+
+如果本轮有 10 个 `sql.yaml`，则理论上生成：
+
+```text
+10 个 sql.yaml × 3 个 partition batch = 30 个任务运行实例
+```
+
+而不是：
+
+```text
+10 个 sql.yaml × 120 个输入分区 = 1200 个任务运行实例
+```
+
+建议配置形态如下：
+
+```yaml
+polling-input:
+  enabled: true
+  strategy: "HDFS_TIME_PARTITION"
+  warehouse-root-path: "hdfs:///uda/warehouse1"
+  grain-type: "5m"
+  partition-batch-size: 50
+  input-format: "parquet"
+  input-view-name: "polling_input"
+```
+
+运行时，框架为每个 batch 执行类似逻辑：
+
+```java
+Dataset<Row> input = spark.read()
+    .format(inputFormat)
+    .load(pathsArray);
+
+input.createOrReplaceTempView(runtimeInputViewName);
+```
+
+其中 `runtimeInputViewName` 不应直接使用固定的 `polling_input`。当前多个子任务共享同一个 `SparkSession`，如果所有线程都注册同名临时视图，会互相覆盖。因此建议：
+
+1. 配置中只声明基础视图名，例如 `polling_input`。
+2. 框架运行时生成唯一视图名，例如 `polling_input_${safeTaskId}_${runSequence}`。
+3. 将真实视图名通过变量 `${tp.input.view}` 注入 `sql.yaml`。
+
+此时 `sql.yaml` 可以写成：
+
+```yaml
+statements:
+  - type: "DML"
+    sql: |
+      INSERT INTO target_table
+      SELECT *
+      FROM ${tp.input.view}
+```
+
+建议新增或保留的变量包括：
+
+| 变量 | 含义 |
+|---|---|
+| `${tp.input.view}` | 当前运行实例预注册的唯一输入临时视图名 |
+| `${tp.input.paths}` | 当前运行实例包含的输入路径列表，具体序列化形式待定 |
+| `${tp.input.paths.csv}` | 当前运行实例包含的输入路径逗号拼接结果 |
+| `${tp.input.partition-ids}` | 当前 batch 包含的分区 ID 列表 |
+| `${tp.input.batch-size}` | 当前 batch 实际包含的分区数量 |
+
+这种方案本质上延续了旧实现“多个分区合并到一个 Dataset 后再计算”的思路，只是把后续计算入口换成 Spark SQL 临时视图。它不需要先在 HDFS 上合并数据，也不要求 SQL 自己处理多个 path 的 datasource 兼容问题。
+
+finished 标记仍建议按单个分区记录，而不是按 batch 记录。一个 batch 成功后，为 batch 内每个 `partitionId` 分别写入 finished 标记；如果 batch 失败，则本批次分区都不写 finished，等待下一轮重新参与分组和重试。这样状态语义更简单，也避免部分成功时的复杂补偿。
+
+因此，第 11 章建议保留两种执行粒度：
+
+| 粒度 | 含义 | 适用场景 |
+|---|---|---|
+| 单分区实例 | 一个 `sql.yaml` + 一个输入分区生成一个运行实例 | 语义最清晰，适合第一版打通闭环 |
+| 批量分区实例 | 一个 `sql.yaml` + 一组输入分区生成一个运行实例，并预注册输入临时视图 | 分区数量较多时减少任务实例数量，推荐作为后续优化方向 |
 
 ## 12. 对当前代码的改造点
 
