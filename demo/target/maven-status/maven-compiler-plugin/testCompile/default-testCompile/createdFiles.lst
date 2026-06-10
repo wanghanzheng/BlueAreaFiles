@@ -1,0 +1,6 @@
+com\hdp\spark\scheduler\demo\service\MmlCommandHandlerTest$RecordingExecutor.class
+com\hdp\spark\scheduler\demo\service\TaskDiscoverySyncServiceTest.class
+com\hdp\spark\scheduler\demo\service\TaskDiscoverySyncServiceTest$FakeHdfsRepository.class
+com\hdp\spark\scheduler\demo\service\TaskDiscoverySyncServiceTest$FakeYarnClient.class
+com\hdp\spark\scheduler\demo\service\MmlCommandHandlerTest.class
+com\hdp\spark\scheduler\demo\registry\TaskRegistryTest.class
