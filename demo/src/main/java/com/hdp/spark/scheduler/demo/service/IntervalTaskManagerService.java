@@ -1,8 +1,8 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
+import com.hdp.spark.scheduler.demo.infra.SparkClientUDA;
 import com.hdp.spark.scheduler.demo.model.IntervalTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.port.TaskExecutorPort;
 import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +21,12 @@ public final class IntervalTaskManagerService {
     private static final Logger log = LoggerFactory.getLogger(IntervalTaskManagerService.class);
 
     private final TaskRegistry registry;
-    private final TaskExecutorPort taskExecutor;
+    private final SparkClientUDA sparkClientUDA;
     private final SchedulerProperties properties;
 
-    public IntervalTaskManagerService(TaskRegistry registry, TaskExecutorPort taskExecutor, SchedulerProperties properties) {
+    public IntervalTaskManagerService(TaskRegistry registry, SparkClientUDA sparkClientUDA, SchedulerProperties properties) {
         this.registry = registry;
-        this.taskExecutor = taskExecutor;
+        this.sparkClientUDA = sparkClientUDA;
         this.properties = properties;
     }
 
@@ -73,13 +73,17 @@ public final class IntervalTaskManagerService {
     /**
      * 启动一个 POLLING 任务。
      *
-     * <p>这里不关心具体 spark-submit 细节，统一交给 TaskExecutorPort。
-     * 这样后续迁移到 HDP 时，只需要把端口适配到已有 asynchExecuteTask。</p>
+     * <p>这里不关心具体 spark-submit 细节，统一调用 SparkClientUDA。
+     * 迁移到 HDP 时把 demo 占位类替换成真实 SparkClientUDA 即可。</p>
      */
     private void launch(IntervalTriggerTaskInstance task) {
-        log.info("Submitting interval POLLING task {}, state={}, activeConfig={}, pendingConfig={}",
-                task.taskName(), task.runtimeState(), task.activeConfigVersion(), task.pendingConfigVersion());
-        taskExecutor.asynchExecuteTask(task.taskName(), task.taskHdfsPath());
-        task.markSubmitted();
+        log.info("Submitting interval POLLING task {}, state={}, configVersion={}",
+                task.key().registryKey(), task.runtimeState(), task.configVersion());
+        try {
+            sparkClientUDA.asynchExecuteTask(task.key().registryKey(), task.taskHdfsPath());
+            task.markSubmitted();
+        } catch (Exception e) {
+            log.error("Failed to submit interval task {}", task.key().registryKey(), e);
+        }
     }
 }

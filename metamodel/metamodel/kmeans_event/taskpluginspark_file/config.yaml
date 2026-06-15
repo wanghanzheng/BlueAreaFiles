@@ -1,0 +1,21 @@
+task:
+  name: "sparkJob3"
+  description: "体验参数聚类"
+
+schedule:
+  type: EVENT_TRIGGER
+  startTime:
+
+execution:
+  runtime-mode: BATCH
+
+spark:
+  config:
+    spark.driver.instances: "1"
+    spark.driver.memory: "4096m"
+    spark.driver.cores: "2"
+    spark.executor.instances: "3"
+    spark.executor.memory: "4096m"
+    spark.executor.cores: "3"
+
+udfs: []

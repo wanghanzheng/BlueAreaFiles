@@ -1,9 +1,10 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
-import com.hdp.spark.scheduler.demo.port.TaskExecutorPort;
+import com.hdp.spark.scheduler.demo.infra.SparkClientUDA;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,11 +43,11 @@ class MmlCommandHandlerTest {
     /**
      * 测试用执行器，只记录调用参数，不真正提交 Spark。
      */
-    private static final class RecordingExecutor implements TaskExecutorPort {
+    private static final class RecordingExecutor extends SparkClientUDA {
         private final List<String> calls = new ArrayList<>();
 
         @Override
-        public void asynchExecuteTask(String taskName, String taskHdfsPath) {
+        public void asynchExecuteTask(String taskName, String taskHdfsPath) throws IOException {
             calls.add(taskName + "@" + taskHdfsPath);
         }
     }

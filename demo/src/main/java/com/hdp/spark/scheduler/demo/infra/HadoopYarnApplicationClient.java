@@ -1,9 +1,9 @@
-package com.hdp.spark.scheduler.demo.infra;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.infra;
 
-import com.hdp.spark.scheduler.demo.model.TaskRuntimeState;
-import com.hdp.spark.scheduler.demo.model.TriggerType;
-import com.hdp.spark.scheduler.demo.model.YarnTaskStatus;
-import com.hdp.spark.scheduler.demo.port.YarnApplicationClient;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskKey;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskRuntimeState;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.YarnTaskStatus;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -19,13 +19,14 @@ import java.util.Optional;
 
 /**
  * YARN 客户端骨架。
- *
- * <p>当前按“Application 名称包含 taskName”的方式示意查找任务。真实 HDP 中最好在提交时约定
- * Application Name 或 tag，例如 hdp-spark:interval_trigger:taskA，这样查询会更准确。</p>
  */
-public final class HadoopYarnApplicationClient implements YarnApplicationClient, AutoCloseable {
-
+public final class HadoopYarnApplicationClient implements AutoCloseable {
     private final YarnClient yarnClient;
+
+    // 测试用构造函数
+    protected HadoopYarnApplicationClient() {
+        this.yarnClient = null;
+    }
 
     public HadoopYarnApplicationClient(Configuration configuration) {
         YarnConfiguration yarnConfiguration = new YarnConfiguration(configuration);
@@ -36,15 +37,12 @@ public final class HadoopYarnApplicationClient implements YarnApplicationClient,
 
     /**
      * 查询某个任务最近一次对应的 YARN Application。
-     *
-     * <p>demo 里只能靠 application name 包含任务名来匹配，这在生产上不够严谨。
-     * 后续建议 HDP 提交任务时统一写 application name 或 application tag。</p>
+     * 后续建议 HDP 提交任务时统一写 application name
      */
-    @Override
-    public Optional<YarnTaskStatus> findLatestApplication(String taskName, TriggerType triggerType) throws IOException {
+    public Optional<YarnTaskStatus> findLatestApplication(TaskKey taskKey) throws IOException {
         try {
             return yarnClient.getApplications().stream()
-                    .filter(report -> belongsToTask(report, taskName, triggerType))
+                    .filter(report -> belongsToTask(report, taskKey))
                     .max(Comparator.comparingLong(ApplicationReport::getStartTime))
                     .map(this::toStatus);
         } catch (YarnException e) {
@@ -57,7 +55,6 @@ public final class HadoopYarnApplicationClient implements YarnApplicationClient,
      *
      * <p>元模型删除 HDFS 任务目录时，如果任务还在跑，TaskDiscoverySyncService 会调用这里。</p>
      */
-    @Override
     public void killApplication(String applicationId) throws IOException {
         try {
             yarnClient.killApplication(parseApplicationId(applicationId));
@@ -80,13 +77,12 @@ public final class HadoopYarnApplicationClient implements YarnApplicationClient,
      * <p>这是最需要迁移时确认的规则：如果 HDP 可以保证 Application Name 为
      * hdp-spark:interval_trigger:taskA，就可以把这里改成精确匹配。</p>
      */
-    private boolean belongsToTask(ApplicationReport report, String taskName, TriggerType triggerType) {
+    private boolean belongsToTask(ApplicationReport report, TaskKey taskKey) {
         String appName = report.getName();
         if (appName == null) {
             return false;
         }
-        // TODO: 后续建议 HDP 提交 Spark 时统一 Application Name / tag，这里就能精确匹配 triggerType + taskName。
-        return appName.contains(taskName) || appName.contains(triggerType.hdfsPathSegment() + ":" + taskName);
+        return appName.equals(taskKey.registryKey());
     }
 
     /**

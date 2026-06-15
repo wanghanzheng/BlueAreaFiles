@@ -1,8 +1,8 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
+import com.hdp.spark.scheduler.demo.infra.SparkClientUDA;
 import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.port.TaskExecutorPort;
 import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +20,12 @@ public final class DailyTriggerSchedulerService {
     private static final Logger log = LoggerFactory.getLogger(DailyTriggerSchedulerService.class);
 
     private final TaskRegistry registry;
-    private final TaskExecutorPort taskExecutor;
+    private final SparkClientUDA sparkClientUDA;
     private final SchedulerProperties properties;
 
-    public DailyTriggerSchedulerService(TaskRegistry registry, TaskExecutorPort taskExecutor, SchedulerProperties properties) {
+    public DailyTriggerSchedulerService(TaskRegistry registry, SparkClientUDA sparkClientUDA, SchedulerProperties properties) {
         this.registry = registry;
-        this.taskExecutor = taskExecutor;
+        this.sparkClientUDA = sparkClientUDA;
         this.properties = properties;
     }
 
@@ -62,9 +62,13 @@ public final class DailyTriggerSchedulerService {
             if (task.shouldTrigger(today, now)) {
                 // 这里先提交，再标记已触发。正式 HDP 如需要更强一致性，
                 // 可以把“提交中/已提交”状态持久化，避免进程重启后重复触发。
-                log.info("Daily task {} reaches start time {}, submitting once", task.taskName(), task.dailyStartTime());
-                taskExecutor.asynchExecuteTask(task.taskName(), task.taskHdfsPath());
-                task.markTriggered(today);
+                log.info("Daily task {} reaches start time {}, submitting once", task.key().registryKey(), task.dailyStartTime());
+                try {
+                    sparkClientUDA.asynchExecuteTask(task.key().registryKey(), task.taskHdfsPath());
+                    task.markTriggered(today);
+                } catch (Exception e) {
+                    log.error("Failed to submit daily task {}", task.key().registryKey(), e);
+                }
             }
         }
     }

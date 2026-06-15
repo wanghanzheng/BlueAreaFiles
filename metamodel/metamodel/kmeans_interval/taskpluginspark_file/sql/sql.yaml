@@ -1,0 +1,30 @@
+statements:
+  - type: "NORMAL"
+    sql: |
+      CREATE OR REPLACE TEMP VIEW input AS
+        SELECT
+        event_type,
+        duration_sec
+        FROM ${tp.input.view}
+
+  - type: "KMEANS"
+    source: "input"
+    outputView: "output"
+    featuresCol: "event_type, duration_sec"
+    k: 10
+    maxIter: 20
+    seed: 2
+
+  - type: "NORMAL"
+    sql: |
+      CREATE TABLE IF NOT EXISTS exp_cluster_result
+      USING starrocks
+      OPTIONS (
+        "starrocks.table.identifier" = "db1.exp_cluster_result"
+      )
+
+  - type: "NORMAL"
+    sql: |
+      INSERT INTO exp_cluster_result
+      SELECT *
+      FROM output

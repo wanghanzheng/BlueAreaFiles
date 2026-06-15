@@ -1,4 +1,4 @@
-package com.hdp.spark.scheduler.demo.model;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
 /**
  * 从 YARN 查询到的任务状态快照。
@@ -10,7 +10,6 @@ public record YarnTaskStatus(
         TaskRuntimeState runtimeState,
         // YARN 诊断信息，失败时可以辅助排查。
         String diagnostics) {
-
     /**
      * 给删除任务时的 kill 判断提供一个更直观的语义。
      */

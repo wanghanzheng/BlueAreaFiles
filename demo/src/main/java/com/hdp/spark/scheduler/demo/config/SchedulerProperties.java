@@ -1,25 +1,32 @@
-package com.hdp.spark.scheduler.demo.config;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.config;
 
-import com.hdp.spark.scheduler.demo.model.TriggerType;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
 
 import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Demo 中集中放调度相关配置。
- *
- * <p>后续搬到 HDP 时，建议把这些值改成 HDP 自己的配置中心、Spring 配置、
- * 数据库配置或元模型配置，不要散落在各个服务里。</p>
+ * 集中放调度相关配置。
  */
 public final class SchedulerProperties {
-
+    // 三种不同类型调度任务的HDFS目录
     private final String eventTriggerRoot;
     private final String dailyTriggerRoot;
     private final String intervalTriggerRoot;
+
+    // 扫描HDFS同步内存进程的扫描周期
     private final Duration discoverySyncInterval;
+
+    // 监控&启动daily任务的进程扫描周期
     private final Duration dailyScheduleCheckInterval;
+
+    // 检查更新daily任务定时时间节点修改的进程扫描周期
     private final Duration dailyConfigRefreshInterval;
+
+    // 检查&启动polling任务的进程扫描周期
     private final Duration intervalManageInterval;
+
+    // 监控polling任务YARN上状态的进程扫描周期
     private final Duration intervalYarnMonitorInterval;
 
     public SchedulerProperties(
@@ -35,16 +42,17 @@ public final class SchedulerProperties {
         this.dailyTriggerRoot = trimTrailingSlash(dailyTriggerRoot);
         this.intervalTriggerRoot = trimTrailingSlash(intervalTriggerRoot);
         this.discoverySyncInterval = Objects.requireNonNull(discoverySyncInterval, "discoverySyncInterval");
-        this.dailyScheduleCheckInterval = Objects.requireNonNull(dailyScheduleCheckInterval, "dailyScheduleCheckInterval");
-        this.dailyConfigRefreshInterval = Objects.requireNonNull(dailyConfigRefreshInterval, "dailyConfigRefreshInterval");
-        this.intervalManageInterval = Objects.requireNonNull(intervalManageInterval, "intervalManageInterval");
-        this.intervalYarnMonitorInterval = Objects.requireNonNull(intervalYarnMonitorInterval, "intervalYarnMonitorInterval");
+        this.dailyScheduleCheckInterval = Objects.requireNonNull(dailyScheduleCheckInterval,
+                "dailyScheduleCheckInterval");
+        this.dailyConfigRefreshInterval = Objects.requireNonNull(dailyConfigRefreshInterval,
+                "dailyConfigRefreshInterval");
+        this.intervalManageInterval = Objects.requireNonNull(intervalManageInterval,
+                "intervalManageInterval");
+        this.intervalYarnMonitorInterval = Objects.requireNonNull(intervalYarnMonitorInterval,
+                "intervalYarnMonitorInterval");
     }
 
     public static SchedulerProperties defaultProperties() {
-        // 这里完全按需求文档里的默认值写死。
-        // 后续搬进 HDP 后，建议改为从配置文件/数据库/配置中心读取，
-        // 这样不同环境的 HDFS 根目录和扫描频率不用重新编译代码。
         return new SchedulerProperties(
                 "hdfs://hacluster/UDA/event_trigger",
                 "hdfs://hacluster/UDA/daily_trigger",
@@ -58,8 +66,6 @@ public final class SchedulerProperties {
 
     /**
      * 根据调度类型拿到对应 HDFS 根目录。
-     *
-     * <p>例如 DAILY_TRIGGER 会返回 hdfs://hacluster/UDA/daily_trigger。</p>
      */
     public String rootPath(TriggerType triggerType) {
         return switch (triggerType) {
@@ -71,9 +77,7 @@ public final class SchedulerProperties {
 
     /**
      * 根据调度类型和任务名拼出完整任务目录。
-     *
-     * <p>事件触发的 StartTask(taskA) 最终就是通过这个方法拼成
-     * hdfs://hacluster/UDA/event_trigger/taskA。</p>
+     * hdfs://hacluster/UDA/event_trigger/taskA。
      */
     public String taskPath(TriggerType triggerType, String taskName) {
         String safeTaskName = Objects.requireNonNull(taskName, "taskName").trim();

@@ -1,0 +1,5 @@
+app:
+  submit-mode: "SINGLE"
+
+single:
+  task-path: "hdfs://hacluster/UDA/daily_trigger/sparkJob2"

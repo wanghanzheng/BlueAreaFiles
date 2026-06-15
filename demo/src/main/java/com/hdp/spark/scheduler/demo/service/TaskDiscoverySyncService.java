@@ -1,14 +1,14 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
+import com.hdp.spark.scheduler.demo.infra.HadoopHdfsTaskDefinitionRepository;
+import com.hdp.spark.scheduler.demo.infra.HadoopYarnApplicationClient;
 import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
 import com.hdp.spark.scheduler.demo.model.DiscoveredTaskDefinition;
 import com.hdp.spark.scheduler.demo.model.IntervalTriggerTaskInstance;
 import com.hdp.spark.scheduler.demo.model.TaskKey;
 import com.hdp.spark.scheduler.demo.model.TriggerType;
 import com.hdp.spark.scheduler.demo.model.YarnTaskStatus;
-import com.hdp.spark.scheduler.demo.port.HdfsTaskDefinitionRepository;
-import com.hdp.spark.scheduler.demo.port.YarnApplicationClient;
 import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +32,14 @@ public final class TaskDiscoverySyncService {
     private static final Logger log = LoggerFactory.getLogger(TaskDiscoverySyncService.class);
 
     private final TaskRegistry registry;
-    private final HdfsTaskDefinitionRepository hdfsRepository;
-    private final YarnApplicationClient yarnClient;
+    private final HadoopHdfsTaskDefinitionRepository hdfsRepository;
+    private final HadoopYarnApplicationClient yarnClient;
     private final SchedulerProperties properties;
 
     public TaskDiscoverySyncService(
             TaskRegistry registry,
-            HdfsTaskDefinitionRepository hdfsRepository,
-            YarnApplicationClient yarnClient,
+            HadoopHdfsTaskDefinitionRepository hdfsRepository,
+            HadoopYarnApplicationClient yarnClient,
             SchedulerProperties properties) {
         this.registry = registry;
         this.hdfsRepository = hdfsRepository;
@@ -104,7 +104,7 @@ public final class TaskDiscoverySyncService {
         for (TaskKey existingKey : registry.dailyKeys()) {
             if (!discoveredKeys.contains(existingKey)) {
                 Optional<DailyTriggerTaskInstance> removed = registry.removeDaily(existingKey);
-                removed.ifPresent(task -> killIfStillRunning(task.taskName(), TriggerType.DAILY_TRIGGER));
+                removed.ifPresent(task -> killIfStillRunning(task.key()));
                 log.info("Removed daily task instance {}", existingKey.registryKey());
             }
         }
@@ -127,7 +127,7 @@ public final class TaskDiscoverySyncService {
         for (TaskKey existingKey : registry.intervalKeys()) {
             if (!discoveredKeys.contains(existingKey)) {
                 Optional<IntervalTriggerTaskInstance> removed = registry.removeInterval(existingKey);
-                removed.ifPresent(task -> killIfStillRunning(task.taskName(), TriggerType.INTERVAL_TRIGGER));
+                removed.ifPresent(task -> killIfStillRunning(task.key()));
                 log.info("Removed interval task instance {}", existingKey.registryKey());
             }
         }
@@ -139,17 +139,17 @@ public final class TaskDiscoverySyncService {
      * <p>需求约定：HDFS 上任务目录被删，HDP 如果发现 YARN 上还在跑，就直接 kill 掉。
      * 因为这个方法同时服务 daily 和 interval，所以通过 triggerType 交给 YARN 客户端做匹配。</p>
      */
-    private void killIfStillRunning(String taskName, TriggerType triggerType) {
+    private void killIfStillRunning(TaskKey taskKey) {
         try {
-            Optional<YarnTaskStatus> status = yarnClient.findLatestApplication(taskName, triggerType);
+            Optional<YarnTaskStatus> status = yarnClient.findLatestApplication(taskKey);
             if (status.isPresent() && status.get().runningLike()) {
                 yarnClient.killApplication(status.get().applicationId());
-                log.info("Killed removed task {} application {}", taskName, status.get().applicationId());
+                log.info("Killed removed task {} application {}", taskKey.registryKey(), status.get().applicationId());
             }
         } catch (IOException e) {
             // 删除任务时 kill 失败需要人工介入，demo 先记录日志。
             // TODO: HDP 中这里建议进入告警或待处理队列，避免任务目录已删但 YARN 任务继续跑。
-            log.error("Failed to kill removed task {}", taskName, e);
+            log.error("Failed to kill removed task {}", taskKey.registryKey(), e);
         }
     }
 }

@@ -1,0 +1,47 @@
+modelType: SparkKmeans
+id: SparkKmeans.sparkJob3
+name: "sparkJob3"
+description: "体验参数聚类"
+features: []
+inputs:
+  - name: "user_behavior"
+    refId: IcebergTable.UDA_catalog.ods.user_behavior
+outputs:
+  - name: "exp_cluster_result"
+    refId: StarRocksTable.db1.exp_cluster_result
+readSql: |-
+    CREATE OR REPLACE TEMP VIEW input AS
+      SELECT
+      event_type,
+      duration_sec
+      FROM UDA_catalog.ods.user_behavior
+sourceView: "input"
+featuresCol: "event_type, duration_sec"
+kmeansPara:
+  k: 10
+  seed: 2
+  maxIter: 20
+outputView: "output"
+sinkSql: |-
+    CREATE TABLE IF NOT EXISTS exp_cluster_result
+    USING starrocks
+    OPTIONS (
+        "starrocks.table.identifier" = "db1.exp_cluster_result"
+    )
+
+    INSERT INTO exp_cluster_result
+    SELECT *
+    FROM output
+resources:
+  executor:
+    count: 3
+    cores: 3
+    memoryMB: 4096
+  driver:
+    count: 1
+    cores: 2
+    memoryMB: 4096
+schedule:
+  type: FIXED_TIME
+  fixedTime: "02:00"
+customParameters: ""

@@ -1,11 +1,10 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
+import com.hdp.spark.scheduler.demo.infra.HadoopYarnApplicationClient;
 import com.hdp.spark.scheduler.demo.model.IntervalTriggerTaskInstance;
 import com.hdp.spark.scheduler.demo.model.TaskRuntimeState;
-import com.hdp.spark.scheduler.demo.model.TriggerType;
 import com.hdp.spark.scheduler.demo.model.YarnTaskStatus;
-import com.hdp.spark.scheduler.demo.port.YarnApplicationClient;
 import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +21,10 @@ public final class IntervalYarnMonitorService {
     private static final Logger log = LoggerFactory.getLogger(IntervalYarnMonitorService.class);
 
     private final TaskRegistry registry;
-    private final YarnApplicationClient yarnClient;
+    private final HadoopYarnApplicationClient yarnClient;
     private final SchedulerProperties properties;
 
-    public IntervalYarnMonitorService(TaskRegistry registry, YarnApplicationClient yarnClient, SchedulerProperties properties) {
+    public IntervalYarnMonitorService(TaskRegistry registry, HadoopYarnApplicationClient yarnClient, SchedulerProperties properties) {
         this.registry = registry;
         this.yarnClient = yarnClient;
         this.properties = properties;
@@ -65,7 +64,7 @@ public final class IntervalYarnMonitorService {
     public void refreshOnce() {
         for (IntervalTriggerTaskInstance task : registry.intervalTasks()) {
             try {
-                Optional<YarnTaskStatus> status = yarnClient.findLatestApplication(task.taskName(), TriggerType.INTERVAL_TRIGGER);
+                Optional<YarnTaskStatus> status = yarnClient.findLatestApplication(task.key());
                 if (status.isPresent()) {
                     task.markRuntimeState(status.get().runtimeState(), status.get().applicationId());
                 } else {
@@ -73,7 +72,7 @@ public final class IntervalYarnMonitorService {
                 }
             } catch (Exception e) {
                 // 查询失败不改状态，避免误判为退出后被拉起多个实例。
-                log.warn("Failed to query YARN status for interval task {}", task.taskName(), e);
+                log.warn("Failed to query YARN status for interval task {}", task.key().registryKey(), e);
             }
         }
     }

@@ -1,0 +1,77 @@
+modelType: SparkSQLJob
+id: SparkSQLJob.sparkJob2
+name: sparkJob2
+description: ""
+features: []
+inputs:
+  - name: user_behavior
+    refId: IcebergTable.UDA_catalog.ods.user_behavior
+outputs:
+  - name: user_behavior_sum
+    refId: KafkaTopic.user_behavior_sum
+    conf:
+      acks: all
+      request.timeout.ms: 3000
+      partitioningStrategy:
+        hashKey: ""
+        sdrHashKey: ""
+        customPartitionerClass: ""
+        businessDesc: ""
+        type: ROUND_ROBIN
+      customParameters: |-
+        kafka.retries=1
+dimensionTables: []
+sql: |-
+    CREATE OR REPLACE TEMPORARY VIEW kafka_source AS
+    SELECT
+      id,
+      name,
+      city,
+      age,
+      score,
+      event_ts
+    FROM UDA_catalog.ods.user_behavior
+
+    CREATE OR REPLACE TEMPORARY VIEW kafka_sink AS
+    SELECT
+      id,
+      name,
+      city,
+      age,
+      score,
+      event_ts
+      FROM kafka_source
+    WHERE age >= 18
+
+    KAFKA: 
+      source: "kafka_sink"
+      topic: "user_behavior_sum"
+      keyExpr: "id"
+      valueExpr: |
+        to_json(named_struct(
+          "id", id,
+          "name", name,
+          "city", city,
+          "age", age,
+          "score", score,
+          "event_ts", CAST(event_ts AS STRING)
+        ))
+resources:
+  executor:
+    count: 3
+    cores: 3
+    memoryMB: 4096
+  driver:
+    count: 1
+    cores: 2
+    memoryMB: 4096
+schedule:
+  type: EVENT
+  eventDescription: "MML命令触发"
+customParameters: |-
+  spark.sql.shuffle.partitions=200
+  spark.sql.files.maxPartitionBytes=134217728
+kafkaProducerConf:
+  customParameters: |-
+    kafka.acks=1
+    kafka.retries=0

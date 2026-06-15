@@ -1,0 +1,28 @@
+task:
+  name: "sparkJob2"
+  description: ""
+
+schedule:
+  type: EVENT_TRIGGER
+  startTime:
+
+execution:
+  runtime-mode: BATCH
+
+spark:
+  config:
+    spark.driver.instances: "1"
+    spark.driver.memory: "4096m"
+    spark.driver.cores: "2"
+    spark.executor.instances: "3"
+    spark.executor.memory: "4096m"
+    spark.executor.cores: "3"
+    spark.sql.shuffle.partitions: "200"
+    spark.sql.files.maxPartitionBytes: "134217728"
+
+kafka:
+  producer-options:
+    kafka.acks: "1"
+    kafka.retries: "0"
+
+udfs: []

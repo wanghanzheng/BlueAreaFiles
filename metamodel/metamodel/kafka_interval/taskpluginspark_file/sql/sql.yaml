@@ -1,0 +1,45 @@
+statements:
+  - type: "NORMAL"
+    sql: |
+      CREATE OR REPLACE TEMPORARY VIEW kafka_source AS
+      SELECT
+        id,
+        name,
+        city,
+        age,
+        score,
+        event_ts
+      FROM ${tp.input.view}
+
+  - type: "NORMAL"
+    sql: |
+      CREATE OR REPLACE TEMPORARY VIEW kafka_sink AS
+      SELECT
+        id,
+        name,
+        city,
+        age,
+        score,
+        event_ts
+      FROM kafka_source
+      WHERE age >= 18
+  
+  - type: "KAFKA"
+    source: "kafka_sink"
+    topic: "user_behavior_sum"
+    keyExpr: "id"
+    valueExpr: |
+      to_json(named_struct(
+          "id", id,
+          "name", name,
+          "city", city,
+          "age", age,
+          "score", score,
+          "event_ts", CAST(event_ts AS STRING)
+        ))
+    options:
+      kafka.acks: "all"
+      kafka.request.timeout.ms: "3000"
+      kafka.retries: "1"
+
+  

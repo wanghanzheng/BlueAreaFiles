@@ -62,7 +62,7 @@ class TaskRegistryTest {
         registry.upsertInterval(v2);
 
         TaskKey key = new TaskKey(TriggerType.INTERVAL_TRIGGER, "taskB");
-        assertEquals("v2", registry.findInterval(key).orElseThrow().pendingConfigVersion());
+        assertEquals("v2", registry.findInterval(key).orElseThrow().configVersion());
 
         registry.removeInterval(key);
         assertTrue(registry.findInterval(key).isEmpty());

@@ -1,11 +1,11 @@
-package com.hdp.spark.scheduler.demo.service;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.service;
 
-import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
-import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.model.DiscoveredTaskDefinition;
-import com.hdp.spark.scheduler.demo.model.TriggerType;
-import com.hdp.spark.scheduler.demo.port.HdfsTaskDefinitionRepository;
-import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.config.SchedulerProperties;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.infra.HadoopHdfsTaskDefinitionRepository;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DailyTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DiscoveredTaskDefinition;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,25 +14,24 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 每 1 小时刷新 daily 任务配置的进程。
+ * 每 1 小时刷新 daily 任务定时时间点配置的进程。
  *
  * <p>注意：这个服务刻意和 TaskDiscoverySyncService 分开。
  * 前者专门维护“任务是否存在”，这里专门刷新 daily 配置里的每天启动时间等属性。</p>
  */
 public final class DailyTriggerConfigRefreshService {
-
     private static final Logger log = LoggerFactory.getLogger(DailyTriggerConfigRefreshService.class);
 
     private final TaskRegistry registry;
-    private final HdfsTaskDefinitionRepository hdfsRepository;
+    private final HadoopHdfsTaskDefinitionRepository HadoophdfsRepository;
     private final SchedulerProperties properties;
 
     public DailyTriggerConfigRefreshService(
             TaskRegistry registry,
-            HdfsTaskDefinitionRepository hdfsRepository,
+            HadoopHdfsTaskDefinitionRepository hdfsRepository,
             SchedulerProperties properties) {
         this.registry = registry;
-        this.hdfsRepository = hdfsRepository;
+        this.HadoophdfsRepository = hdfsRepository;
         this.properties = properties;
     }
 
@@ -65,12 +64,13 @@ public final class DailyTriggerConfigRefreshService {
      * 刷新当前内存中所有 daily 任务的配置。
      *
      * <p>任务新增/删除不靠这个方法处理，仍然由 TaskDiscoverySyncService 负责。
-     * 这里主要表达需求里“每 1 小时扫 HDFS，看每天启动时间有没有改动”的进程。</p>
+     * 这里主要表达需求里“每 1 小时扫 HDFS，看每天启动时间有没有改动的进程。</p>
      */
     public void refreshOnce() {
         for (DailyTriggerTaskInstance task : registry.dailyTasks()) {
+            // 对此实例任务名在HDFS中读取一次后来内存中更新实例
             try {
-                Optional<DiscoveredTaskDefinition> definition = hdfsRepository.load(
+                Optional<DiscoveredTaskDefinition> definition = HadoophdfsRepository.load(
                         TriggerType.DAILY_TRIGGER,
                         task.taskName(),
                         task.taskHdfsPath());

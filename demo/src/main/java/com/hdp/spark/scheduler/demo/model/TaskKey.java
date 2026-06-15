@@ -1,14 +1,13 @@
-package com.hdp.spark.scheduler.demo.model;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
 import java.util.Objects;
 
 /**
  * 内存注册表的 key。
  *
- * <p>同名任务可能出现在不同调度类型目录下，所以 key 不能只用 taskName。</p>
+ * <p>防止同名任务出现在不同调度类型目录下，所以 key 不能只用 taskName。</p>
  */
 public record TaskKey(TriggerType triggerType, String taskName) {
-
     public TaskKey {
         Objects.requireNonNull(triggerType, "triggerType");
         taskName = Objects.requireNonNull(taskName, "taskName").trim();

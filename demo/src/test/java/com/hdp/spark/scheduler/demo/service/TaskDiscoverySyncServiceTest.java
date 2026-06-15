@@ -1,13 +1,14 @@
 package com.hdp.spark.scheduler.demo.service;
 
 import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
+import com.hdp.spark.scheduler.demo.infra.HadoopHdfsTaskDefinitionRepository;
+import com.hdp.spark.scheduler.demo.infra.HadoopYarnApplicationClient;
 import com.hdp.spark.scheduler.demo.model.DiscoveredTaskDefinition;
 import com.hdp.spark.scheduler.demo.model.TaskKey;
 import com.hdp.spark.scheduler.demo.model.TaskRuntimeState;
 import com.hdp.spark.scheduler.demo.model.TriggerType;
 import com.hdp.spark.scheduler.demo.model.YarnTaskStatus;
-import com.hdp.spark.scheduler.demo.port.HdfsTaskDefinitionRepository;
-import com.hdp.spark.scheduler.demo.port.YarnApplicationClient;
+import org.apache.hadoop.conf.Configuration;
 import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -86,10 +87,10 @@ class TaskDiscoverySyncServiceTest {
     }
 
     /**
-     * POLLING 配置变更只更新 pendingConfigVersion，不应立即修改 activeConfigVersion。
+     * POLLING 配置变更只更新内存实例的最新配置版本，不应立即触发重新提交。
      */
     @Test
-    void intervalConfigChangeOnlyUpdatesPendingConfig() throws Exception {
+    void intervalConfigChangeOnlyUpdatesMemoryConfig() throws Exception {
         TaskRegistry registry = new TaskRegistry();
         FakeHdfsRepository hdfs = new FakeHdfsRepository();
         FakeYarnClient yarn = new FakeYarnClient();
@@ -105,8 +106,8 @@ class TaskDiscoverySyncServiceTest {
         service.syncOnce();
 
         var task = registry.findInterval(new TaskKey(TriggerType.INTERVAL_TRIGGER, "taskB")).orElseThrow();
-        assertEquals("v2", task.pendingConfigVersion());
-        assertEquals(null, task.activeConfigVersion(), "配置变更不应立即重启，也不应直接改 active 版本");
+        assertEquals("v2", task.configVersion());
+        assertTrue(task.needsLaunch(), "配置变更本身不负责启动任务，仍由常驻任务管理进程按状态判断");
     }
 
     /**
@@ -125,8 +126,12 @@ class TaskDiscoverySyncServiceTest {
     /**
      * 测试用 HDFS 仓库：用内存 Map 模拟每类 HDFS 目录下扫描到的任务。
      */
-    private static final class FakeHdfsRepository implements HdfsTaskDefinitionRepository {
+    private static final class FakeHdfsRepository extends HadoopHdfsTaskDefinitionRepository {
         private final Map<TriggerType, List<DiscoveredTaskDefinition>> definitions = new EnumMap<>(TriggerType.class);
+
+        private FakeHdfsRepository() {
+            super(SchedulerProperties.defaultProperties(), new Configuration());
+        }
 
         void set(TriggerType triggerType, List<DiscoveredTaskDefinition> values) {
             definitions.put(triggerType, values);
@@ -164,15 +169,19 @@ class TaskDiscoverySyncServiceTest {
     /**
      * 测试用 YARN 客户端：可预设查询状态，并记录 kill 调用。
      */
-    private static final class FakeYarnClient implements YarnApplicationClient {
+    private static final class FakeYarnClient extends HadoopYarnApplicationClient {
         private Optional<YarnTaskStatus> status = Optional.empty();
         private final List<String> killedApplications = new ArrayList<>();
+
+        private FakeYarnClient() {
+            super();
+        }
 
         /**
          * 返回测试中预先设置的 YARN 状态。
          */
         @Override
-        public Optional<YarnTaskStatus> findLatestApplication(String taskName, TriggerType triggerType) {
+        public Optional<YarnTaskStatus> findLatestApplication(TaskKey taskKey) {
             return status;
         }
 

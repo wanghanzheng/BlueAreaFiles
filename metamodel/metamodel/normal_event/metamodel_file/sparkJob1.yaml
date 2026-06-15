@@ -1,0 +1,60 @@
+modelType: SparkSQLJob
+id: SparkSQLJob.sparkJob1
+name: sparkJob1
+description: ""
+features: []
+inputs:
+  - name: user_behavior
+    refId: IcebergTable.UDA_catalog.ods.user_behavior
+outputs:
+  - name: user_behavior_sum
+    refId: StarRocksTable.db1.user_behavior_sum
+dimensionTables: []
+sql: |-
+    CREATE OR REPLACE TEMPORARY VIEW user_behavior_source AS
+    SELECT
+        user_id,
+        event_type,
+        duration_sec,
+        event_time
+    FROM UDA_catalog.ods.user_behavior
+
+    CREATE OR REPLACE TEMPORARY VIEW user_behavior_sum_view AS
+    SELECT
+       event_type,
+        COUNT(*) AS event_count,
+        SUM(duration_sec) AS total_duration_sec,
+        AVG(duration_sec) AS avg_duration_sec
+    FROM user_behavior_source
+    GROUP BY event_type
+
+    CREATE TABLE IF NOT EXISTS sr_user_behavior_sum
+    USING starrocks
+    OPTIONS (
+        "starrocks.table.identifier" = "db1.user_behavior_sum"
+    )
+
+    INSERT INTO sr_user_behavior_sum
+    SELECT
+        event_type,
+        event_count,
+        total_duration_sec,
+        avg_duration_sec
+    FROM user_behavior_sum_view
+resources:
+  executor:
+    count: 3
+    cores: 3
+    memoryMB: 4096
+  driver:
+    count: 1
+    cores: 2
+    memoryMB: 4096
+schedule:
+  type: EVENT
+  eventDescription: "MML命令触发"
+customParameters: |-
+  spark.sql.shuffle.partitions=200
+  spark.sql.files.maxPartitionBytes=134217728
+kafkaProducerConf:
+  customParameters: ""

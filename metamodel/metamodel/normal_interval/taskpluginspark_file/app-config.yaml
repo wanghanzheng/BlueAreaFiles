@@ -1,0 +1,27 @@
+app:
+  name: "sparkJob1"
+  description: ""
+  runtime-mode: "BATCH"
+  submit-mode: "MULTI-POLLING"
+  max-running-duration: "6h"
+
+spark:
+  config:
+    spark.driver.instances: "1"
+    spark.driver.memory: "4096m"
+    spark.driver.cores: "2"
+    spark.executor.instances: "3"
+    spark.executor.memory: "4096m"
+    spark.executor.cores: "3"
+    spark.sql.shuffle.partitions: "200"
+    spark.sql.files.maxPartitionBytes: "134217728"
+
+discovery:
+  task-root-path: "hdfs://hacluster/UDA/interval_trigger/sparkJob1"
+  polling-interval: "1h"
+
+polling-input:
+  iceberg-table: "UDA_catalog.ods.user_behavior"
+  grain-type: "5m"
+  warehouse-file-type: "iceberg"
+  lookback: "20m"

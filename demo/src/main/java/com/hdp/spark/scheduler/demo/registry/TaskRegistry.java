@@ -1,10 +1,10 @@
-package com.hdp.spark.scheduler.demo.registry;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.registry;
 
-import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.model.DiscoveredTaskDefinition;
-import com.hdp.spark.scheduler.demo.model.IntervalTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.model.TaskKey;
-import com.hdp.spark.scheduler.demo.model.TriggerType;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DailyTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DiscoveredTaskDefinition;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.IntervalTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskKey;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentMap;
  * 不需要在运行时做一堆 instanceof 判断。</p>
  */
 public final class TaskRegistry {
-
     private final ConcurrentMap<TaskKey, DailyTriggerTaskInstance> dailyTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<TaskKey, IntervalTriggerTaskInstance> intervalTasks = new ConcurrentHashMap<>();
 
@@ -29,8 +28,8 @@ public final class TaskRegistry {
      * 第一次发现任务时创建实例；后续配置变化时只更新已有实例属性。</p>
      */
     public DailyTriggerTaskInstance upsertDaily(DiscoveredTaskDefinition definition) {
-        if (definition.triggerType() != TriggerType.DAILY_TRIGGER) {
-            throw new IllegalArgumentException("Expected DAILY_TRIGGER but got " + definition.triggerType());
+        if (definition.getTriggerType() != TriggerType.DAILY_TRIGGER) {
+            throw new IllegalArgumentException("Expected DAILY_TRIGGER but got " + definition.getTriggerType());
         }
         return dailyTasks.compute(definition.key(), (key, existing) -> {
             if (existing == null) {
@@ -43,13 +42,10 @@ public final class TaskRegistry {
 
     /**
      * 新增或更新 interval/POLLING 任务实例。
-     *
-     * <p>注意：配置变更只会更新实例里的 pendingConfigVersion，不会在这里触发重启。
-     * 是否重启由 IntervalTaskManagerService 根据运行状态统一判断。</p>
      */
     public IntervalTriggerTaskInstance upsertInterval(DiscoveredTaskDefinition definition) {
-        if (definition.triggerType() != TriggerType.INTERVAL_TRIGGER) {
-            throw new IllegalArgumentException("Expected INTERVAL_TRIGGER but got " + definition.triggerType());
+        if (definition.getTriggerType() != TriggerType.INTERVAL_TRIGGER) {
+            throw new IllegalArgumentException("Expected INTERVAL_TRIGGER but got " + definition.getTriggerType());
         }
         return intervalTasks.compute(definition.key(), (key, existing) -> {
             if (existing == null) {

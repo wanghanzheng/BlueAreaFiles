@@ -1,0 +1,23 @@
+task:
+  name: "sparkJob1"
+  description: ""
+
+schedule:
+  type: DAILY_TRIGGER
+  startTime: "02:00"
+
+execution:
+  runtime-mode: BATCH
+
+spark:
+  config:
+    spark.driver.instances: "1"
+    spark.driver.memory: "4096m"
+    spark.driver.cores: "3"
+    spark.executor.instances: "3"
+    spark.executor.memory: "4096m"
+    spark.executor.cores: "3"
+    spark.sql.shuffle.partitions: "200"
+    spark.sql.files.maxPartitionBytes: "134217728"
+
+udfs: []

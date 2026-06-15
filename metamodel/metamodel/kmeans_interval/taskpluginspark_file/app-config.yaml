@@ -1,0 +1,25 @@
+app:
+  name: "sparkJob3"
+  description: "体验参数聚类"
+  runtime-mode: "BATCH"
+  submit-mode: "MULTI-POLLING"
+  max-running-duration: "6h"
+
+spark:
+  config:
+    spark.driver.instances: "1"
+    spark.driver.memory: "4096m"
+    spark.driver.cores: "2"
+    spark.executor.instances: "3"
+    spark.executor.memory: "4096m"
+    spark.executor.cores: "3"
+
+discovery:
+  task-root-path: "hdfs://hacluster/UDA/interval_trigger/sparkJob3"
+  polling-interval: "1h"
+
+polling-input:
+  iceberg-table: "UDA_catalog.ods.user_behavior"
+  grain-type: "5m"
+  warehouse-file-type: "iceberg"
+  lookback: "20m"

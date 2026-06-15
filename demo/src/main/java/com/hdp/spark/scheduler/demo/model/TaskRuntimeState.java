@@ -1,4 +1,4 @@
-package com.hdp.spark.scheduler.demo.model;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
 /**
  * HDP 内存实例上的运行状态。

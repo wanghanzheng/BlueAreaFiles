@@ -1,4 +1,4 @@
-package com.hdp.spark.scheduler.demo.model;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
 import java.time.Instant;
 
@@ -9,21 +9,16 @@ import java.time.Instant;
  * HDFS 发现同步进程只更新 pending，等任务下个周期重启时再把 pending 变成 active。</p>
  */
 public final class IntervalTriggerTaskInstance {
-
     private final TaskKey key;
     private volatile String taskHdfsPath;
     private volatile TaskRuntimeState runtimeState = TaskRuntimeState.UNKNOWN;
     private volatile String applicationId;
-    private volatile String activeConfigVersion;
-    private volatile String pendingConfigVersion;
-    private volatile Instant lastDefinitionSyncTime;
-    private volatile Instant lastRuntimeSyncTime;
 
     /**
      * 由 HDFS 扫描结果创建 POLLING 任务实例。
      */
     public IntervalTriggerTaskInstance(DiscoveredTaskDefinition definition) {
-        if (definition.triggerType() != TriggerType.INTERVAL_TRIGGER) {
+        if (definition.getTriggerType() != TriggerType.INTERVAL_TRIGGER) {
             throw new IllegalArgumentException("IntervalTriggerTaskInstance only accepts INTERVAL_TRIGGER");
         }
         this.key = definition.key();
@@ -32,29 +27,22 @@ public final class IntervalTriggerTaskInstance {
 
     /**
      * 更新 HDFS 配置定义。
-     *
-     * <p>需求里明确：POLLING 任务配置变更不用立即重启。
-     * 所以这里只更新 taskHdfsPath 和 pendingConfigVersion，真正启动新配置要等下次重启。</p>
      */
     public synchronized void updateDefinition(DiscoveredTaskDefinition definition) {
         if (!key.equals(definition.key())) {
-            throw new IllegalArgumentException("Cannot update " + key.registryKey() + " with " + definition.key().registryKey());
+            throw new IllegalArgumentException(
+                    "Cannot update " + key.registryKey() + " with " + definition.key().registryKey());
         }
-        this.taskHdfsPath = definition.taskHdfsPath();
-        this.pendingConfigVersion = definition.configVersion();
-        this.lastDefinitionSyncTime = Instant.now();
+        this.taskHdfsPath = definition.getTaskHdfsPath();
     }
 
     /**
      * 调用 asynchExecuteTask 后标记为已提交。
-     *
-     * <p>demo 里 asynchExecuteTask 没有返回 applicationId，所以只能先标记为 SUBMITTED。
+     * asynchExecuteTask 没有返回 applicationId，所以只能先标记为 SUBMITTED。
      * 后续由 IntervalYarnMonitorService 再从 YARN 查询真实 applicationId 和运行状态。</p>
      */
     public synchronized void markSubmitted() {
         this.runtimeState = TaskRuntimeState.SUBMITTED;
-        // 真实 asynchExecuteTask 如果能返回 applicationId，可以在适配层里调用 markRuntimeState 更新。
-        this.activeConfigVersion = pendingConfigVersion;
     }
 
     /**
@@ -63,7 +51,6 @@ public final class IntervalTriggerTaskInstance {
     public synchronized void markRuntimeState(TaskRuntimeState state, String applicationId) {
         this.runtimeState = state;
         this.applicationId = applicationId;
-        this.lastRuntimeSyncTime = Instant.now();
     }
 
     /**
@@ -94,21 +81,5 @@ public final class IntervalTriggerTaskInstance {
 
     public String applicationId() {
         return applicationId;
-    }
-
-    public String activeConfigVersion() {
-        return activeConfigVersion;
-    }
-
-    public String pendingConfigVersion() {
-        return pendingConfigVersion;
-    }
-
-    public Instant lastDefinitionSyncTime() {
-        return lastDefinitionSyncTime;
-    }
-
-    public Instant lastRuntimeSyncTime() {
-        return lastRuntimeSyncTime;
     }
 }
