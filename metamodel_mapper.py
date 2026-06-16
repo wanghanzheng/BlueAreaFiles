@@ -5,6 +5,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any, Iterable
+from zipfile import ZipFile
 
 
 ICEBERG_PREFIX = "IcebergTable."
@@ -105,6 +106,44 @@ def generate_taskplugin_zip_entries(entry_name: str, metamodel_content: str) -> 
         else:
             zip_entries[f"{base_dir}/{filename}"] = content
     return zip_entries
+
+
+def write_generated_taskplugin_entries(input_zip: ZipFile, output_zip: ZipFile) -> None:
+    """
+    Scan compute/<ModelType>/*.yaml entries in input_zip and append generated files to output_zip.
+
+    The caller may copy original entries before invoking this function. Generated entries are written
+    after original entries, so zip readers that resolve duplicate names by last entry observe the
+    generated content as the effective overwrite.
+    """
+    generated_entries: dict[str, str] = {}
+    for item in input_zip.namelist():
+        if not is_compute_metamodel_entry(item):
+            continue
+        metamodel_content = input_zip.read(item).decode("utf-8")
+        generated_entries.update(generate_taskplugin_zip_entries(item, metamodel_content))
+
+    for path, content in generated_entries.items():
+        remove_zip_entry_from_central_directory(output_zip, path)
+        output_zip.writestr(path, content.encode("utf-8"))
+
+
+def remove_zip_entry_from_central_directory(output_zip: ZipFile, path: str) -> None:
+    """
+    Remove an already-written entry from ZipFile's pending central directory.
+
+    zipfile does not expose overwrite support in write mode. The pre-export hook keeps its
+    original copy-then-append flow, so generated files need to replace copied entries here.
+    Removing the old ZipInfo before writestr makes the final central directory contain only
+    the generated entry for that path.
+    """
+    normalized = normalize_zip_path(path)
+    output_zip.filelist = [
+        info for info in output_zip.filelist
+        if normalize_zip_path(info.filename) != normalized
+    ]
+    output_zip.NameToInfo.pop(path, None)
+    output_zip.NameToInfo.pop(normalized, None)
 
 
 def extract_task_name_from_metamodel_filename(filename: str, model_dir: str) -> str:

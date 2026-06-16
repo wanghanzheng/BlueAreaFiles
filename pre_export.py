@@ -15,7 +15,7 @@ import io
 import zipfile
 import base64
 
-from metamodel_mapper import generate_taskplugin_zip_entries, is_compute_metamodel_entry
+from metamodel_mapper import write_generated_taskplugin_entries
 
 
 def process_zip(zip_content_b64: str) -> tuple:
@@ -30,33 +30,18 @@ def process_zip(zip_content_b64: str) -> tuple:
     """
     try:
         zip_bytes = base64.b64decode(zip_content_b64)
-        entries = {}
-        entry_order = []
-        generated_entries = {}
-
-        with zipfile.ZipFile(io.BytesIO(zip_bytes), 'r') as input_zip:
-            for item in input_zip.namelist():
-                content = input_zip.read(item)
-                if item not in entries:
-                    entry_order.append(item)
-                entries[item] = content
-
-                if is_compute_metamodel_entry(item):
-                    metamodel_content = content.decode('utf-8')
-                    generated_entries.update(
-                        generate_taskplugin_zip_entries(item, metamodel_content)
-                    )
-
-        for path, content in generated_entries.items():
-            encoded_content = content.encode('utf-8')
-            if path not in entries:
-                entry_order.append(path)
-            entries[path] = encoded_content
+        input_zip = zipfile.ZipFile(io.BytesIO(zip_bytes), 'r')
 
         output_buffer = io.BytesIO()
-        with zipfile.ZipFile(output_buffer, 'w', zipfile.ZIP_DEFLATED) as output_zip:
-            for item in entry_order:
-                output_zip.writestr(item, entries[item])
+        output_zip = zipfile.ZipFile(output_buffer, 'w', zipfile.ZIP_DEFLATED)
+
+        for item in input_zip.namelist():
+            output_zip.writestr(item, input_zip.read(item))
+
+        write_generated_taskplugin_entries(input_zip, output_zip)
+
+        input_zip.close()
+        output_zip.close()
 
         new_zip_bytes = output_buffer.getvalue()
         new_zip_content_b64 = base64.b64encode(new_zip_bytes).decode('utf-8')
