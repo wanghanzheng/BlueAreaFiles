@@ -20,7 +20,8 @@ import java.util.concurrent.TimeUnit;
  * 前者专门维护“任务是否存在”，这里专门刷新 daily 配置里的每天启动时间等属性。</p>
  */
 public final class DailyTriggerConfigRefreshService {
-    private static final Logger log = LoggerFactory.getLogger(DailyTriggerConfigRefreshService.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DailyTriggerConfigRefreshService.class);
 
     private final TaskRegistry registry;
     private final HadoopHdfsTaskDefinitionRepository HadoophdfsRepository;
@@ -56,7 +57,7 @@ public final class DailyTriggerConfigRefreshService {
         try {
             refreshOnce();
         } catch (Exception e) {
-            log.error("Daily config refresh failed", e);
+            LOGGER.error("Daily config refresh failed", e);
         }
     }
 
@@ -77,7 +78,7 @@ public final class DailyTriggerConfigRefreshService {
                 definition.ifPresent(registry::upsertDaily);
             } catch (Exception e) {
                 // 目录删除由任务发现同步进程统一处理，这里只记录刷新失败。
-                log.warn("Failed to refresh daily task config {}", task.taskName(), e);
+                LOGGER.warn("Failed to refresh daily task config {}", task.taskName(), e);
             }
         }
     }

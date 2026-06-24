@@ -8,6 +8,7 @@ import java.util.Objects;
  * <p>防止同名任务出现在不同调度类型目录下，所以 key 不能只用 taskName。</p>
  */
 public record TaskKey(TriggerType triggerType, String taskName) {
+
     public TaskKey {
         Objects.requireNonNull(triggerType, "triggerType");
         taskName = Objects.requireNonNull(taskName, "taskName").trim();

@@ -1,9 +1,10 @@
-package com.hdp.spark.scheduler.demo.service;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.service;
 
-import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
-import com.hdp.spark.scheduler.demo.infra.SparkClientUDA;
-import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.SparkClientUDA;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.config.SchedulerProperties;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DailyTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.registry.TaskRegistry;
+import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,15 +18,17 @@ import java.util.concurrent.TimeUnit;
  */
 public final class DailyTriggerSchedulerService {
 
-    private static final Logger log = LoggerFactory.getLogger(DailyTriggerSchedulerService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DailyTriggerSchedulerService.class);
 
     private final TaskRegistry registry;
-    private final SparkClientUDA sparkClientUDA;
     private final SchedulerProperties properties;
 
-    public DailyTriggerSchedulerService(TaskRegistry registry, SparkClientUDA sparkClientUDA, SchedulerProperties properties) {
+    @Resource
+    private SparkClientUDA sparkClientUDA;
+
+    public DailyTriggerSchedulerService(TaskRegistry registry,
+                                        SchedulerProperties properties) {
         this.registry = registry;
-        this.sparkClientUDA = sparkClientUDA;
         this.properties = properties;
     }
 
@@ -47,7 +50,7 @@ public final class DailyTriggerSchedulerService {
         try {
             tick(LocalDate.now(), LocalTime.now());
         } catch (Exception e) {
-            log.error("Daily trigger scheduler failed", e);
+            LOGGER.error("Daily trigger scheduler failed", e);
         }
     }
 
@@ -60,14 +63,14 @@ public final class DailyTriggerSchedulerService {
     public void tick(LocalDate today, LocalTime now) {
         for (DailyTriggerTaskInstance task : registry.dailyTasks()) {
             if (task.shouldTrigger(today, now)) {
-                // 这里先提交，再标记已触发。正式 HDP 如需要更强一致性，
-                // 可以把“提交中/已提交”状态持久化，避免进程重启后重复触发。
-                log.info("Daily task {} reaches start time {}, submitting once", task.key().registryKey(), task.dailyStartTime());
+                // 这里先提交，再标记已触发。
+                LOGGER.info("Daily task {} reaches start time {}, submitting once",
+                        task.taskName(), task.dailyStartTime());
                 try {
                     sparkClientUDA.asynchExecuteTask(task.key().registryKey(), task.taskHdfsPath());
                     task.markTriggered(today);
                 } catch (Exception e) {
-                    log.error("Failed to submit daily task {}", task.key().registryKey(), e);
+                    LOGGER.error("Failed to submit daily task {}", task.taskName(), e);
                 }
             }
         }

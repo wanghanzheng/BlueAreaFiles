@@ -2,7 +2,6 @@ package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginsche
 
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskKey;
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskRuntimeState;
-import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.YarnTaskStatus;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -21,6 +20,7 @@ import java.util.Optional;
  * YARN 客户端骨架。
  */
 public final class HadoopYarnApplicationClient implements AutoCloseable {
+
     private final YarnClient yarnClient;
 
     // 测试用构造函数
@@ -37,7 +37,6 @@ public final class HadoopYarnApplicationClient implements AutoCloseable {
 
     /**
      * 查询某个任务最近一次对应的 YARN Application。
-     * 后续建议 HDP 提交任务时统一写 application name
      */
     public Optional<YarnTaskStatus> findLatestApplication(TaskKey taskKey) throws IOException {
         try {

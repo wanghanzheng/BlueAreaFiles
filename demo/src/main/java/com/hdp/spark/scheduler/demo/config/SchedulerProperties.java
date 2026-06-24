@@ -13,19 +13,14 @@ public final class SchedulerProperties {
     private final String eventTriggerRoot;
     private final String dailyTriggerRoot;
     private final String intervalTriggerRoot;
-
     // 扫描HDFS同步内存进程的扫描周期
     private final Duration discoverySyncInterval;
-
     // 监控&启动daily任务的进程扫描周期
     private final Duration dailyScheduleCheckInterval;
-
     // 检查更新daily任务定时时间节点修改的进程扫描周期
     private final Duration dailyConfigRefreshInterval;
-
     // 检查&启动polling任务的进程扫描周期
     private final Duration intervalManageInterval;
-
     // 监控polling任务YARN上状态的进程扫描周期
     private final Duration intervalYarnMonitorInterval;
 

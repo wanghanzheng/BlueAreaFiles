@@ -1,7 +1,5 @@
 package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
-import java.time.Instant;
-
 /**
  * 常驻隔一段时间触发任务的内存实例，对应 Spark 计算框架里的 POLLING 模式。
  *
@@ -9,6 +7,7 @@ import java.time.Instant;
  * HDFS 发现同步进程只更新 pending，等任务下个周期重启时再把 pending 变成 active。</p>
  */
 public final class IntervalTriggerTaskInstance {
+
     private final TaskKey key;
     private volatile String taskHdfsPath;
     private volatile TaskRuntimeState runtimeState = TaskRuntimeState.UNKNOWN;
@@ -30,8 +29,8 @@ public final class IntervalTriggerTaskInstance {
      */
     public synchronized void updateDefinition(DiscoveredTaskDefinition definition) {
         if (!key.equals(definition.key())) {
-            throw new IllegalArgumentException(
-                    "Cannot update " + key.registryKey() + " with " + definition.key().registryKey());
+            throw new IllegalArgumentException("Cannot update " + key.registryKey()
+                    + " with " + definition.key().registryKey());
         }
         this.taskHdfsPath = definition.getTaskHdfsPath();
     }

@@ -1,15 +1,15 @@
-package com.hdp.spark.scheduler.demo.service;
+package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.service;
 
-import com.hdp.spark.scheduler.demo.config.SchedulerProperties;
-import com.hdp.spark.scheduler.demo.infra.HadoopHdfsTaskDefinitionRepository;
-import com.hdp.spark.scheduler.demo.infra.HadoopYarnApplicationClient;
-import com.hdp.spark.scheduler.demo.model.DailyTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.model.DiscoveredTaskDefinition;
-import com.hdp.spark.scheduler.demo.model.IntervalTriggerTaskInstance;
-import com.hdp.spark.scheduler.demo.model.TaskKey;
-import com.hdp.spark.scheduler.demo.model.TriggerType;
-import com.hdp.spark.scheduler.demo.model.YarnTaskStatus;
-import com.hdp.spark.scheduler.demo.registry.TaskRegistry;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.config.SchedulerProperties;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.infra.HadoopHdfsTaskDefinitionRepository;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.infra.HadoopYarnApplicationClient;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DailyTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DiscoveredTaskDefinition;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.IntervalTriggerTaskInstance;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TaskKey;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.YarnTaskStatus;
+import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.registry.TaskRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TaskDiscoverySyncService {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskDiscoverySyncService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TaskDiscoverySyncService.class);
 
     private final TaskRegistry registry;
     private final HadoopHdfsTaskDefinitionRepository hdfsRepository;
@@ -73,7 +73,7 @@ public final class TaskDiscoverySyncService {
             syncOnce();
         } catch (Exception e) {
             // 发现同步失败时不要让调度线程退出。真实 HDP 中这里应接入告警。
-            log.error("HDFS task discovery sync failed", e);
+            LOGGER.error("HDFS task discovery sync failed", e);
         }
     }
 
@@ -105,7 +105,7 @@ public final class TaskDiscoverySyncService {
             if (!discoveredKeys.contains(existingKey)) {
                 Optional<DailyTriggerTaskInstance> removed = registry.removeDaily(existingKey);
                 removed.ifPresent(task -> killIfStillRunning(task.key()));
-                log.info("Removed daily task instance {}", existingKey.registryKey());
+                LOGGER.info("Removed daily task instance {}", existingKey.registryKey());
             }
         }
     }
@@ -128,7 +128,7 @@ public final class TaskDiscoverySyncService {
             if (!discoveredKeys.contains(existingKey)) {
                 Optional<IntervalTriggerTaskInstance> removed = registry.removeInterval(existingKey);
                 removed.ifPresent(task -> killIfStillRunning(task.key()));
-                log.info("Removed interval task instance {}", existingKey.registryKey());
+                LOGGER.info("Removed interval task instance {}", existingKey.registryKey());
             }
         }
     }
@@ -144,12 +144,11 @@ public final class TaskDiscoverySyncService {
             Optional<YarnTaskStatus> status = yarnClient.findLatestApplication(taskKey);
             if (status.isPresent() && status.get().runningLike()) {
                 yarnClient.killApplication(status.get().applicationId());
-                log.info("Killed removed task {} application {}", taskKey.registryKey(), status.get().applicationId());
+                LOGGER.info("Killed removed task {} application {}",
+                        taskKey.registryKey(), status.get().applicationId());
             }
         } catch (IOException e) {
-            // 删除任务时 kill 失败需要人工介入，demo 先记录日志。
-            // TODO: HDP 中这里建议进入告警或待处理队列，避免任务目录已删但 YARN 任务继续跑。
-            log.error("Failed to kill removed task {}", taskKey.registryKey(), e);
+            LOGGER.error("Failed to kill removed task {}", taskKey.registryKey(), e);
         }
     }
 }

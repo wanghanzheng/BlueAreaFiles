@@ -1,8 +1,6 @@
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\config\SchedulerProperties.java
-D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\DemoApplication.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\infra\HadoopHdfsTaskDefinitionRepository.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\infra\HadoopYarnApplicationClient.java
-D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\infra\SparkClientUDA.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\model\DailyTriggerTaskInstance.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\model\DiscoveredTaskDefinition.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\model\IntervalTriggerTaskInstance.java
@@ -15,5 +13,5 @@ D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\ser
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\service\DailyTriggerSchedulerService.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\service\IntervalTaskManagerService.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\service\IntervalYarnMonitorService.java
-D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\service\MmlCommandHandler.java
 D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\service\TaskDiscoverySyncService.java
+D:\JavaProject\BlueAreaFiles\demo\src\main\java\com\hdp\spark\scheduler\demo\TaskPluginSparkTaskStart.java

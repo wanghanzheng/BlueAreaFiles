@@ -1,6 +1,5 @@
 package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.infra;
 
-import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.SparkJobListenerUDA;
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.config.SchedulerProperties;
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.DiscoveredTaskDefinition;
 import com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model.TriggerType;
@@ -97,6 +96,7 @@ public final class HadoopHdfsTaskDefinitionRepository {
             Path taskPath,
             TriggerType triggerType,
             String taskName) throws IOException {
+
         LocalTime dailyStartTime = null;
         // 从配置文件读每日启动时间
         if (triggerType == TriggerType.DAILY_TRIGGER) {
@@ -104,6 +104,7 @@ public final class HadoopHdfsTaskDefinitionRepository {
             Object rawStartTime = findValue(taskConfig, "schedule.startTime");
             dailyStartTime = parseDailyStartTime(rawStartTime).orElse(null);
         }
+
         return new DiscoveredTaskDefinition(triggerType, taskName, taskPath.toString(), dailyStartTime);
     }
 
@@ -129,7 +130,7 @@ public final class HadoopHdfsTaskDefinitionRepository {
      *
      * <p>例如 schedule.startTime 会尝试读取：
      * schedule:
-     * startTime: "02:00"</p>
+     *   startTime: "02:00"</p>
      */
     @SuppressWarnings("unchecked")
     private Object findValue(Map<String, Object> root, String dottedKey) {

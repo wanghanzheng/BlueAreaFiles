@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
  * 不需要在运行时做一堆 instanceof 判断。</p>
  */
 public final class TaskRegistry {
+
     private final ConcurrentMap<TaskKey, DailyTriggerTaskInstance> dailyTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<TaskKey, IntervalTriggerTaskInstance> intervalTasks = new ConcurrentHashMap<>();
 

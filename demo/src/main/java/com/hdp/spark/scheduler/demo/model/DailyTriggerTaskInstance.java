@@ -1,14 +1,13 @@
 package com.huawei.cloududn.cspservhdp.service.impl.sparkschedule.taskpluginschedule.model;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Objects;
 
 /**
  * 每天定时触发任务的内存实例。
  */
 public final class DailyTriggerTaskInstance {
+
     private final TaskKey key;
     private volatile String taskHdfsPath;
     private volatile LocalTime dailyStartTime;
@@ -30,8 +29,8 @@ public final class DailyTriggerTaskInstance {
      */
     public synchronized void updateDefinition(DiscoveredTaskDefinition definition) {
         if (!key.equals(definition.key())) {
-            throw new IllegalArgumentException(
-                    "Cannot update " + key.registryKey() + " with " + definition.key().registryKey());
+            throw new IllegalArgumentException("Cannot update " + key.registryKey()
+                    + " with " + definition.key().registryKey());
         }
         this.taskHdfsPath = definition.getTaskHdfsPath();
         this.dailyStartTime = definition.getDailyStartTime();

@@ -6,7 +6,7 @@ import java.time.LocalTime;
  * HDFS 扫描后得到的“期望任务定义”。
  * 它不是内存中长期被管理的任务实例，只是某次扫描看到的 HDFS 真实状态。
  */
-public final class DiscoveredTaskDefinition{
+public final class DiscoveredTaskDefinition {
     // 任务时间触发类型
     private final TriggerType triggerType;
     // 任务名，默认来自 HDFS 一级子目录名。
