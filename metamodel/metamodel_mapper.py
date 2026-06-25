@@ -268,6 +268,12 @@ def append_normal_statement(lines: list[str], sql: str) -> None:
 
 def append_kafka_statement(lines: list[str], action: dict[str, Any], output_conf: dict[str, Any]) -> None:
     options = kafka_action_options(output_conf)
+    if "protobufMessage" in action:
+        protobuf_message = action["protobufMessage"]
+    elif "valueExpr" in action:
+        protobuf_message = action["valueExpr"]
+    else:
+        raise KeyError("protobufMessage")
 
     append_statement_gap(lines)
     lines.extend([
@@ -275,9 +281,9 @@ def append_kafka_statement(lines: list[str], action: dict[str, Any], output_conf
         f"    source: {q(action['source'])}",
         f"    topic: {q(action['topic'])}",
         f"    keyExpr: {q(action['keyExpr'])}",
-        "    valueExpr: |",
+        "    protobufMessage: |",
     ])
-    append_block(lines, string_value(action["valueExpr"]), indent=6)
+    append_block(lines, string_value(protobuf_message), indent=6)
     lines.append("    options:")
     lines.extend(format_key_values(options, indent=6))
 

@@ -634,7 +634,7 @@ Kafka 任务的元模型 `sql` 仍按空行分段：
 
 - 对每个按空行拆分出的段，先 trim 段首空白。
 - 如果段首以 `KAFKA:` 开头，则该段解析为 Kafka action。
-- `KAFKA:` 段内部按 YAML 片段解析 `source`、`topic`、`keyExpr`、`valueExpr` 等字段。
+- `KAFKA:` 段内部按 YAML 片段解析 `source`、`topic`、`keyExpr`、`protobufMessage` 等字段。
 - 其他段均作为普通 SQL 文本处理。
 - 允许同一个元模型 `sql` 中出现多个 `KAFKA:` 段。
 - 每个 `KAFKA:` 段生成一条 `type: "KAFKA"` statement。
@@ -658,8 +658,8 @@ statements:
     source: "<KAFKA.source>"
     topic: "<KAFKA.topic>"
     keyExpr: "<KAFKA.keyExpr>"
-    valueExpr: |
-      <KAFKA.valueExpr>
+    protobufMessage: |
+      <KAFKA.protobufMessage>
     options:
       <单 topic Kafka 配置>
 ```
@@ -672,7 +672,7 @@ statements:
 | `source` | 来自元模型 `sql` 中 `KAFKA.source` |
 | `topic` | 来自元模型 `sql` 中 `KAFKA.topic` |
 | `keyExpr` | 来自元模型 `sql` 中 `KAFKA.keyExpr` |
-| `valueExpr` | 来自元模型 `sql` 中 `KAFKA.valueExpr`，原样完整复制 |
+| `protobufMessage` | 来自元模型 `sql` 中 `KAFKA.protobufMessage`，原样完整复制 |
 
 说明：
 
@@ -753,7 +753,7 @@ options:
   source: "..."
   topic: "..."
   keyExpr: "..."
-  valueExpr: |
+  protobufMessage: |
     ...
   options:
 ```
@@ -952,7 +952,7 @@ statements:
 sql: |
   ...
 
-valueExpr: |
+protobufMessage: |
   ...
 ```
 
@@ -961,7 +961,7 @@ valueExpr: |
 | 场景 | 规则 |
 | --- | --- |
 | SQL 段 | 使用 `sql:` 加 literal block scalar `|` |
-| Kafka `valueExpr` | 使用 `valueExpr:` 加 literal block scalar `|` |
+| Kafka `protobufMessage` | 使用 `protobufMessage:` 加 literal block scalar `|` |
 | chomping indicator | 不使用 `|-` |
 | block 内容 | 按 YAML 缩进输出，内容本身尽量保持原始行 |
 
