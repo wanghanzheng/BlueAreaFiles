@@ -513,7 +513,7 @@ polling-input:
 
 | 目标字段 | 映射规则 |
 | --- | --- |
-| `polling-input.iceberg-table` | 来自元模型 `inputs[0].refId` 去掉前缀 `IcebergTable.` |
+| `polling-input.iceberg-table` | 来自元模型 `inputs[0].refId`，去掉前缀 `IcebergTable.` 后，将剩余路径第一段固定替换为 `UDA_catalog` |
 | `polling-input.grain-type` | 来自元模型 `schedule.grainType` |
 | `polling-input.warehouse-file-type` | 固定为 `"iceberg"` |
 | `polling-input.lookback` | 来自元模型 `schedule.lookback` |
@@ -521,14 +521,14 @@ polling-input:
 
 元模型侧保证 `INTERVAL` 场景下 `inputs` 只有一个输入，且该输入为 `IcebergTable`。
 
-映射脚本只需要读取 `inputs[0].refId` 并去掉 `IcebergTable.` 前缀，不需要处理多个输入或非 Iceberg 输入场景。
+映射脚本只需要读取 `inputs[0].refId`，去掉 `IcebergTable.` 前缀，并将剩余路径第一段（例如 `IcebergDatabase`）固定替换为 `UDA_catalog`；不需要处理多个输入或非 Iceberg 输入场景。
 
 示例：
 
 ```yaml
 inputs:
   - name: user_behavior
-    refId: IcebergTable.UDA_catalog.ods.user_behavior
+    refId: IcebergTable.IcebergDatabase.ods.user_behavior
 schedule:
   type: INTERVAL
   grainType: 5m

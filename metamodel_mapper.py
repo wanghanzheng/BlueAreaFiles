@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 ICEBERG_PREFIX = "IcebergTable."
 KAFKA_PREFIX = "KafkaTopic."
+POLLING_ICEBERG_CATALOG = "UDA_catalog"
 
 MODEL_TYPE_SPARK_SQL = "SparkSQLJob"
 MODEL_TYPE_KMEANS = "SparkKmeans"
@@ -210,7 +211,7 @@ def build_multi_polling_app_config(model: dict[str, Any], task_type: str) -> str
     kafka_options = [] if task_type == TASK_TYPE_KMEANS else parse_custom_parameters(
         ((model.get("kafkaProducerConf") or {}).get("customParameters"))
     )
-    iceberg_table = strip_prefix(model["inputs"][0]["refId"], ICEBERG_PREFIX)
+    iceberg_table = map_polling_iceberg_table(model["inputs"][0]["refId"])
     task_root_path = f"hdfs://hacluster/UDA/interval_trigger/{model['name']}"
 
     lines = [
@@ -484,6 +485,12 @@ def append_block(lines: list[str], content: str, indent: int) -> None:
 def strip_prefix(value: Any, prefix: str) -> str:
     text = string_value(value)
     return text[len(prefix):] if text.startswith(prefix) else text
+
+
+def map_polling_iceberg_table(ref_id: Any) -> str:
+    table_ref = strip_prefix(ref_id, ICEBERG_PREFIX)
+    _, namespace_and_table = table_ref.split(".", 1)
+    return f"{POLLING_ICEBERG_CATALOG}.{namespace_and_table}"
 
 
 def string_value(value: Any) -> str:
