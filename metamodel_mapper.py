@@ -382,9 +382,8 @@ def append_kafka_statement(lines: list[str], action: dict[str, Any], output_conf
         f"    source: {q(action['source'])}",
         f"    topic: {q(action['topic'])}",
         f"    keyExpr: {q(action['keyExpr'])}",
-        "    valueExpr: |",
+        f"    protobufMessage: {q(action['protobufMessage'])}",
     ])
-    append_block(lines, string_value(action["valueExpr"]), indent=6)
     lines.append("    options:")
     lines.extend(format_key_values(options, indent=6))
 

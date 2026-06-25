@@ -658,8 +658,7 @@ statements:
     source: "<KAFKA.source>"
     topic: "<KAFKA.topic>"
     keyExpr: "<KAFKA.keyExpr>"
-    protobufMessage: |
-      <KAFKA.protobufMessage>
+    protobufMessage: "<KAFKA.protobufMessage>"
     options:
       <单 topic Kafka 配置>
 ```
@@ -672,7 +671,7 @@ statements:
 | `source` | 来自元模型 `sql` 中 `KAFKA.source` |
 | `topic` | 来自元模型 `sql` 中 `KAFKA.topic` |
 | `keyExpr` | 来自元模型 `sql` 中 `KAFKA.keyExpr` |
-| `protobufMessage` | 来自元模型 `sql` 中 `KAFKA.protobufMessage`，原样完整复制 |
+| `protobufMessage` | 来自元模型 `sql` 中 `KAFKA.protobufMessage`，按普通单行字符串输出，格式与 `keyExpr` 一致 |
 
 说明：
 
@@ -753,8 +752,7 @@ options:
   source: "..."
   topic: "..."
   keyExpr: "..."
-  protobufMessage: |
-    ...
+  protobufMessage: "..."
   options:
 ```
 
@@ -951,9 +949,6 @@ statements:
 ```yaml
 sql: |
   ...
-
-protobufMessage: |
-  ...
 ```
 
 规则：
@@ -961,7 +956,6 @@ protobufMessage: |
 | 场景 | 规则 |
 | --- | --- |
 | SQL 段 | 使用 `sql:` 加 literal block scalar `|` |
-| Kafka `protobufMessage` | 使用 `protobufMessage:` 加 literal block scalar `|` |
 | chomping indicator | 不使用 `|-` |
 | block 内容 | 按 YAML 缩进输出，内容本身尽量保持原始行 |
 
