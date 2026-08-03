@@ -1,0 +1,4 @@
+interface:
+  display_name: "扩展 Spark MLlib Action"
+  short_description: "先确认算法契约，再扩展可配置的 Spark MLlib Action"
+  default_prompt: "使用 $extend-spark-mllib-action 仿照当前 KMeans 实现，为 Spark SQL 计算框架增加一种可配置的 MLlib 算法。"
