@@ -1,0 +1,4 @@
+interface:
+  display_name: "元模型 SQL 上线前检查"
+  short_description: "跨仓扫描元模型 SQL 的语法、执行顺序、依赖关系与表结构兼容性"
+  default_prompt: "使用 $validate-metamodel-sql，扫描我提供的 frame_calc、strut 和 metamodel 三个仓库根路径，并生成上线前 SQL 检查报告。"
